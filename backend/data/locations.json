@@ -1,0 +1,97 @@
+[
+  {
+    "id": "DEPOT_CENTRAL",
+    "name": "BKC Central Fleet Operations Depot",
+    "latitude": 19.0657,
+    "longitude": 72.8687,
+    "type": "DEPOT",
+    "zone": "Zone 1 - Central Hub",
+    "address": "G Block, Bandra Kurla Complex, Mumbai, MH 400051",
+    "description": "Central vehicle dispatch, EV fast charging, and overnight maintenance yard."
+  },
+  {
+    "id": "DEPOT_WEST",
+    "name": "Bandra Reclamation Western Yard",
+    "latitude": 19.0485,
+    "longitude": 72.832,
+    "type": "DEPOT",
+    "zone": "Zone 2 - West Coastal",
+    "address": "Reclamation Promenade, Bandra West, Mumbai, MH 400050",
+    "description": "Secondary staging depot for coastal and southern sector compactors."
+  },
+  {
+    "id": "FAC_DEONAR",
+    "name": "Deonar Solid Waste Processing Center",
+    "latitude": 19.0494,
+    "longitude": 72.9142,
+    "type": "FACILITY",
+    "zone": "Zone 3 - Eastern Industrial",
+    "address": "Ghatkopar-Mankhurd Link Rd, Deonar, Mumbai, MH 400043",
+    "description": "Waste-to-energy conversion and bulk municipal composting facility."
+  },
+  {
+    "id": "FAC_KANJURMARG",
+    "name": "Kanjurmarg Integrated Bio-Methanation Plant",
+    "latitude": 19.131,
+    "longitude": 72.935,
+    "type": "FACILITY",
+    "zone": "Zone 4 - North East",
+    "address": "Eastern Express Highway, Kanjurmarg East, Mumbai, MH 400042",
+    "description": "Automated sorting and high-capacity anaerobic digestion plant."
+  },
+  {
+    "id": "FAC_DHARAVI_MRF",
+    "name": "Dharavi Clean Recyclables Hub",
+    "latitude": 19.042,
+    "longitude": 72.856,
+    "type": "FACILITY",
+    "zone": "Zone 1 - Central",
+    "address": "Sion-Bandra Link Rd, Dharavi, Mumbai, MH 400017",
+    "description": "Specialized dry recyclables sorting and plastic baling facility."
+  },
+  {
+    "id": "LOC_KURLA_LBS",
+    "name": "Kurla West Market Junction",
+    "latitude": 19.0682,
+    "longitude": 72.8791,
+    "type": "REQUEST",
+    "zone": "Zone 1 - Central Hub",
+    "address": "LBS Marg, Near Phoenix Mall, Kurla West, Mumbai, MH 400070"
+  },
+  {
+    "id": "LOC_BANDRA_LINKING",
+    "name": "Bandra Linking Road Retail District",
+    "latitude": 19.0596,
+    "longitude": 72.8295,
+    "type": "REQUEST",
+    "zone": "Zone 2 - West Coastal",
+    "address": "Linking Road, Bandra West, Mumbai, MH 400050"
+  },
+  {
+    "id": "LOC_DHARAVI_LEATHER",
+    "name": "Dharavi Leather Goods Market",
+    "latitude": 19.0435,
+    "longitude": 72.858,
+    "type": "REQUEST",
+    "zone": "Zone 1 - Central",
+    "address": "90 Feet Rd, Dharavi, Mumbai, MH 400017"
+  },
+  {
+    "id": "LOC_GHATKOPAR_METRO",
+    "name": "Ghatkopar Station West Market",
+    "latitude": 19.0863,
+    "longitude": 72.9082,
+    "type": "REQUEST",
+    "zone": "Zone 3 - Eastern Industrial",
+    "address": "R.B. Mehta Marg, Ghatkopar West, Mumbai, MH 400086"
+  },
+  {
+    "id": "LOC_CHEMBUR_DIAMOND",
+    "name": "Diamond Garden Circle Plaza",
+    "latitude": 19.0522,
+    "longitude": 72.8998,
+    "type": "REQUEST",
+    "zone": "Zone 3 - Eastern Industrial",
+    "address": "Central Ave, Chembur East, Mumbai, MH 400071"
+  }
+]

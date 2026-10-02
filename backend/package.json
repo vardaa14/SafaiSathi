@@ -1,0 +1,26 @@
+{
+  "name": "safaisaathi-backend",
+  "version": "1.0.0",
+  "description": "SafaiSaathi Backend API - Municipal Waste Management, Drivers & Fleet Telematics Store",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [
+    "safaisaathi",
+    "waste-management",
+    "fleet-telematics",
+    "driver-management",
+    "mumbai-municipality"
+  ],
+  "author": "SafaiSaathi Team",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0"
+  }
+}

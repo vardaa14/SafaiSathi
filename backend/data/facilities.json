@@ -1,0 +1,50 @@
+[
+  {
+    "id": "FAC-01",
+    "name": "Deonar Solid Waste Processing Center",
+    "type": "PROCESSING_PLANT",
+    "latitude": 19.0494,
+    "longitude": 72.9142,
+    "zone": "Zone 3 - Eastern Industrial",
+    "capacityKgDay": 150000,
+    "currentLoadKg": 84200,
+    "status": "OPERATIONAL",
+    "address": "Ghatkopar-Mankhurd Link Rd, Deonar, Mumbai, MH 400043"
+  },
+  {
+    "id": "FAC-02",
+    "name": "Kanjurmarg Integrated Bio-Methanation Plant",
+    "type": "PROCESSING_PLANT",
+    "latitude": 19.1310,
+    "longitude": 72.9350,
+    "zone": "Zone 4 - North East",
+    "capacityKgDay": 120000,
+    "currentLoadKg": 61500,
+    "status": "OPERATIONAL",
+    "address": "Eastern Express Highway, Kanjurmarg East, Mumbai, MH 400042"
+  },
+  {
+    "id": "FAC-03",
+    "name": "Dharavi Clean Recyclables Hub",
+    "type": "RECYCLING_CENTER",
+    "latitude": 19.0420,
+    "longitude": 72.8560,
+    "zone": "Zone 1 - Central",
+    "capacityKgDay": 45000,
+    "currentLoadKg": 19800,
+    "status": "OPERATIONAL",
+    "address": "Sion-Bandra Link Rd, Dharavi, Mumbai, MH 400017"
+  },
+  {
+    "id": "DEPOT-01",
+    "name": "BKC Central Fleet Operations Depot",
+    "type": "DEPOT",
+    "latitude": 19.0657,
+    "longitude": 72.8687,
+    "zone": "Zone 1 - Central Hub",
+    "capacityKgDay": 50000,
+    "currentLoadKg": 0,
+    "status": "OPERATIONAL",
+    "address": "G Block, Bandra Kurla Complex, Mumbai, MH 400051"
+  }
+]
