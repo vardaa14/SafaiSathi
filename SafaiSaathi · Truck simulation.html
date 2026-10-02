@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SafaiSaathi · Truck simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b14;--glass:rgba(12,19,34,.82);--line:rgba(148,197,255,.16);--text:#e8eef9;--muted:#8b9ab3;--cyan:#38bdf8;--em:#34d399;--amber:#fbbf24;--red:#f87171;
+--sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.top{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;z-index:3}
+.brand{font-weight:800;letter-spacing:-.01em}
+.note{font-size:12px;color:var(--muted);padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--glass)}
+.card{position:absolute;left:16px;top:58px;width:min(350px,calc(100% - 32px));max-height:calc(100% - 140px);overflow:auto;padding:20px;background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:18px;z-index:3}
+.tag{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--cyan)}
+h1{margin:0 0 8px;font-size:22px;line-height:1.2;letter-spacing:-.02em}
+.sub{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+.big{margin:14px 0 0;font-size:15px;font-weight:700}
+.big.ok{color:var(--em)}.big.warn{color:var(--amber)}.big.red{color:var(--red)}.big.cy{color:var(--cyan)}
+.facts{margin:14px 0 0;display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.facts div{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;background:#0b1220;font-size:13px}
+.facts dt{color:var(--muted)}.facts dd{margin:0;font-weight:600}.mono{font-family:var(--mono)}
+table{width:100%;margin-top:14px;border-collapse:collapse;font-size:12.5px}
+td,th{padding:7px 6px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500}
+tr.win td{color:var(--cyan);font-weight:700}tr.no td{color:var(--muted)}
+.metrics{margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metrics div{padding:10px;border:1px solid var(--line);border-radius:10px;background:#0b1220}
+.metrics b{display:block;font-size:18px;color:var(--em)}.metrics span{font-size:11.5px;color:var(--muted)}
+.chain{position:absolute;left:16px;right:16px;bottom:64px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;z-index:3;pointer-events:none}
+.chain span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--glass)}
+.chain span.on{color:var(--cyan);border-color:rgba(56,189,248,.5)}
+.chain span.done{color:var(--em);border-color:rgba(52,211,153,.4)}
+.bar{position:absolute;left:0;right:0;bottom:14px;display:flex;gap:8px;justify-content:center;z-index:3}
+button{font:600 13px var(--sans);color:var(--text);background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer;backdrop-filter:blur(10px)}
+button:hover:not(:disabled){border-color:var(--cyan)}button:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+button.crit{color:#fff;background:rgba(220,60,60,.35);border-color:rgba(248,113,113,.6)}
+.banner{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:4;padding:10px 18px;border-radius:12px;font-weight:700;font-size:14px;background:rgba(60,12,12,.9);border:1px solid rgba(248,113,113,.7);color:#fecaca;display:none}
+.banner.show{display:block}.banner.good{background:rgba(6,40,30,.92);border-color:rgba(52,211,153,.6);color:#a7f3d0}
+@media (max-width:700px){.card{padding:14px;max-height:42%}h1{font-size:18px}.note{display:none}.chain{bottom:58px}.banner{top:auto;bottom:100px}}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="top"><span class="brand">SafaiSaathi</span><span class="note">Simulation on a stylized city grid, not live Mumbai data</span></div>
+<div class="card" id="card"></div>
+<div class="banner" id="banner"></div>
+<div class="chain" id="chain"></div>
+<div class="bar">
+  <button id="crit" class="crit" disabled>Simulate critical request</button>
+  <button id="speed">Speed 1×</button>
+  <button id="replay">Replay</button>
+</div>
+<script>
+(()=>{
+const W=1000,H=640,KM=0.005; // 100 map units = 0.5 km
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let dpr=1,cw=0,ch=0;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);cw=innerWidth;ch=innerHeight;cv.width=cw*dpr;cv.height=ch*dpr}
+addEventListener('resize',resize);resize();
+
+/* ---------- world ---------- */
+const P={D:{x:100,y:500},S1:{x:400,y:500},S2:{x:400,y:300},S3:{x:800,y:100},R:{x:600,y:300},F:{x:900,y:500},C:{x:200,y:200}};
+const REQ={id:'REQ-2041',loc:'Kurla West, LBS Marg',type:'Mixed Household',kg:15,pri:'High'};
+const FLEET=[
+ {id:'V-01',pos:{x:200,y:100},ok:true,spare:10,note:'Capacity 10 kg'},
+ {id:'V-02',pos:{x:900,y:200},ok:true,spare:80,route:null},
+ {id:'V-03',pos:P.D,ok:true,spare:78,route:['D','S1','S2','S3','F']},
+ {id:'V-04',pos:{x:700,y:500},ok:false,spare:100,note:'In maintenance'}];
+const man=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+// seeded blocks
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const blocks=[];for(let x=0;x<W;x+=100)for(let y=0;y<H;y+=100){blocks.push({x,y,a:.35+rnd()*.5,park:rnd()<.08})}
+
+/* ---------- routing on the street grid ---------- */
+function seg(a,b){const m={x:b.x,y:a.y};const o=[a];if(m.x!==a.x&&m.y!==a.y||(m.x!==a.x||m.y!==a.y)&&!(m.x===b.x&&m.y===b.y))o.push(m);o.push(b);return o.filter((p,i,r)=>i===0||p.x!==r[i-1].x||p.y!==r[i-1].y)}
+function build(start,wps){const pts=[start];let cur=start;const at=[];
+ for(const w of wps){const s=seg(cur,w.p);pts.push(...s.slice(1));cur=w.p;at.push(null);w._i=pts.length-1}
+ const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+man(pts[i-1],pts[i]);
+ for(const w of wps)w.sAt=cum[w._i];
+ return{pts,cum,len:cum[cum.length-1],wps}}
+function posAt(r,s){s=Math.max(0,Math.min(r.len,s));let i=1;while(i<r.cum.length-1&&r.cum[i]<s)i++;
+ const a=r.pts[i-1],b=r.pts[i],d=r.cum[i]-r.cum[i-1]||1,t=(s-r.cum[i-1])/d;
+ return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,i,ang:Math.atan2(b.y-a.y,b.x-a.x)}}
+function wp(k,type,label){return{p:P[k],k,type,label,done:false}}
+
+/* ---------- assignment evaluation (computed, not scripted) ---------- */
+function evaluate(){
+ return FLEET.map(v=>{
+  if(!v.ok)return{v,verdict:'Unavailable',cost:null};
+  if(v.spare<REQ.kg)return{v,verdict:'Too full',cost:null};
+  let cost;
+  if(v.route){const k=v.route.map(n=>P[n]);cost=Infinity;
+   for(let i=0;i<k.length-1;i++)cost=Math.min(cost,man(k[i],P.R)+man(P.R,k[i+1])-man(k[i],k[i+1]))}
+  else cost=man(v.pos,P.R);
+  return{v,verdict:'Eligible',cost:cost*KM}});
+}
+const EV=evaluate();const WIN=EV.filter(e=>e.cost!=null).sort((a,b)=>a.cost-b.cost)[0].v;
+
+/* ---------- state ---------- */
+let S;
+function init(){
+ const base=build(P.D,[wp('S1','stop','Stop 1'),wp('S2','stop','Stop 2'),wp('S3','stop','Stop 3'),wp('F','facility','Facility')]);
+ S={phase:0,t:0,speed:S?S.speed:1,base,route:base,newRoute:null,oldRoute:null,drawFrac:1,oldAlpha:0,
+  s:0,pause:0,ang:0,truck:{...P.D},status:0,crit:null,critDone:false,traveled:0,collectT:0,rev:0,
+  cam:{x:P.R.x,y:P.R.y,z:2.2},started:false,pulse:0};
+ $('crit').disabled=true;$('banner').className='banner';
+}
+const PHASES=['report','received','review','assign','optimize','move','collect','tofac','unload','done'];
+const DUR=[3,3.2,2.4,6.2,5,0,3.6,0,2.6,0];
+const STEPS=['Reported','Validated','Assigned','En route','Collecting','Collected'];
+
+/* ---------- simulation ---------- */
+function setRoute(r){S.route=r;S.s=0}
+function nextWp(){return S.route.wps.find(w=>!w.done)}
+function update(dt){
+ dt*=S.speed;S.t+=dt;S.pulse+=dt;
+ const ph=S.phase;
+ if(ph===3){S.rev=Math.min(EV.length,Math.floor(S.t/0.9))}
+ if(ph===0&&S.t>DUR[0])go(1);
+ else if(ph===1&&S.t>DUR[1])go(2);
+ else if(ph===2&&S.t>DUR[2]){go(3);S.status=1}
+ else if(ph===3&&S.t>DUR[3]){go(4);S.status=2}
+ else if(ph===4){
+  if(S.t<1.6){S.oldAlpha=1;S.newRoute=null}
+  else{
+   if(!S.newRoute){S.oldRoute=S.base;S.newRoute=build(P.D,[wp('S1','stop','Stop 1'),wp('S2','stop','Stop 2'),wp('R','pickup','Pickup'),wp('S3','stop','Stop 3'),wp('F','facility','Facility')])}
+   S.drawFrac=Math.min(1,(S.t-1.6)/2.4);S.oldAlpha=Math.max(0,1-(S.t-1.6)/1.2);
+  }
+  if(S.t>DUR[4]){S.route=S.newRoute;S.s=0;S.oldRoute=null;go(5);S.status=3;$('crit').disabled=false}
+ }
+ else if(ph===5||ph===7)drive(dt);
+ else if(ph===6){S.collectT=S.t/DUR[6];if(S.t>2.2)S.status=5;if(S.t>DUR[6]){go(7)}}
+ else if(ph===8&&S.t>DUR[8])go(9);
+ if(S.crit)critStep(dt);
+}
+function go(p){S.phase=p;S.t=0;if(p===6)S.status=4}
+function drive(dt){
+ if(S.crit&&S.crit.stage<4)return;
+ if(S.pause>0){S.pause-=dt;return}
+ const w=nextWp();if(!w)return;
+ const step=130*dt;
+ S.s=Math.min(S.route.len,S.s+step);S.traveled+=step;
+ if(S.s>=w.sAt-0.5){
+  w.done=true;
+  if(w.type==='stop'||w.type==='crit'){S.pause=w.type==='crit'?1.2:.6;if(w.type==='crit')S.critDone=true}
+  else if(w.type==='pickup'){go(6);$('crit').disabled=true}
+  else if(w.type==='facility'){go(8);$('crit').disabled=true}
+ }
+}
+/* critical request: real recalculation from the truck's current position */
+$('crit').onclick=()=>{
+ if(S.phase!==5||S.crit||S.critDone)return;
+ S.crit={stage:0,t:0};$('crit').disabled=true;
+};
+function critStep(dt){
+ const c=S.crit;c.t+=dt;
+ if(c.stage===0&&c.t>1.8){c.stage=1;c.t=0;S.oldRoute=S.route;S.oldAlpha=1;
+  // replan: finish current segment, then critical stop first, remaining stops by nearest neighbour
+  const here=posAt(S.route,S.s),nxt=S.route.pts[here.i];
+  const rest=S.route.wps.filter(w=>!w.done);
+  const order=[wp('C','crit','Critical')];let cur=P.C;const left=rest.filter(w=>w.type!=='facility');
+  const fac=rest.find(w=>w.type==='facility');
+  while(left.length){left.sort((a,b)=>man(cur,a.p)-man(cur,b.p));const w=left.shift();order.push(w);cur=w.p}
+  order.push(fac);
+  const r=build({x:here.x,y:here.y},[]);// base
+  const pts=[{x:here.x,y:here.y},nxt];let c2=nxt;const cum=[0];
+  const R2={pts,wps:order};
+  for(const w of order){const s=seg(c2,w.p);pts.push(...s.slice(1));c2=w.p;w._i=pts.length-1}
+  for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+man(pts[i-1],pts[i]);
+  R2.cum=cum;R2.len=cum[cum.length-1];for(const w of order)w.sAt=cum[w._i];
+  S.crit.next=R2;void r;
+ }
+ else if(c.stage===1&&c.t>1.6){c.stage=2;c.t=0;S.newRoute=c.next;S.drawFrac=0}
+ else if(c.stage===2){S.drawFrac=Math.min(1,c.t/2);S.oldAlpha=Math.max(0,1-c.t/1.2);if(c.t>2.1){c.stage=3;c.t=0;S.route=S.newRoute;S.s=0;S.newRoute=null;S.oldRoute=null;S.drawFrac=1}}
+ else if(c.stage===3&&c.t>1.6){c.stage=4;S.crit=null}
+}
+
+/* ---------- camera ---------- */
+function fitZ(){const aw=cw>900?cw-380:cw,ah=ch-150;return Math.min(aw/(W+160),ah/(H+160))}
+function vcx(){return cw>900?cw/2+170:cw/2}
+function target(){
+ const p=S.phase,f=fitZ(),T=S.truck;
+ if(S.crit&&S.crit.stage<4)return{x:W/2,y:H/2,z:f};
+ if(p<=2)return{x:P.R.x,y:P.R.y,z:[2.4,2.2,2][p]*f/1.0};
+ if(p===3||p===4||p===9)return{x:W/2,y:H/2,z:f};
+ if(p===5||p===7)return{x:T.x,y:T.y,z:f*2};
+ if(p===6)return{x:P.R.x,y:P.R.y,z:f*2.8};
+ return{x:P.F.x,y:P.F.y,z:f*2.6};
+}
+function camStep(dt){
+ const t=target(),k=1-Math.exp(-dt*2.2),c=S.cam;
+ c.x+=(t.x-c.x)*k;c.y+=(t.y-c.y)*k;c.z+=(t.z-c.z)*k;
+}
+
+/* ---------- drawing ---------- */
+function strokePath(r,frac,from){
+ const L=r.len*frac;ctx.beginPath();let started=false;
+ for(let i=0;i<r.pts.length;i++){
+  const p=r.pts[i];
+  if(i===0){ctx.moveTo(p.x,p.y);continue}
+  if(r.cum[i]<=L){ctx.lineTo(p.x,p.y)}
+  else{const a=r.pts[i-1],d=r.cum[i]-r.cum[i-1],t=(L-r.cum[i-1])/d;ctx.lineTo(a.x+(p.x-a.x)*t,a.y+(p.y-a.y)*t);break}
+ }
+ void started;void from;ctx.stroke()
+}
+function pin(p,col,label,px){
+ const z=S.cam.z,u=1/z;
+ ctx.save();ctx.translate(p.x,p.y);
+ ctx.fillStyle=col;ctx.strokeStyle='#070b14';ctx.lineWidth=2*u;
+ ctx.beginPath();ctx.arc(0,0,(px||8)*u,0,7);ctx.fill();ctx.stroke();
+ if(label){ctx.font=`600 ${11*u}px Inter,sans-serif`;ctx.fillStyle='#cbd5e1';ctx.textAlign='center';ctx.fillText(label,0,-(px||8)*u-6*u)}
+ ctx.restore()
+}
+function sq(p,col,letter){
+ const u=1/S.cam.z;ctx.save();ctx.translate(p.x,p.y);
+ ctx.fillStyle='#0b1220';ctx.strokeStyle=col;ctx.lineWidth=2*u;
+ ctx.beginPath();ctx.roundRect(-13*u,-13*u,26*u,26*u,6*u);ctx.fill();ctx.stroke();
+ ctx.fillStyle=col;ctx.font=`700 ${13*u}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(letter,0,u);ctx.restore()
+}
+function truckSprite(x,y,ang,col,label,dim){
+ const u=1/S.cam.z;ctx.save();ctx.translate(x,y);
+ if(label){ctx.font=`600 ${11*u}px Inter,sans-serif`;ctx.fillStyle=dim?'#64748b':'#e2e8f0';ctx.textAlign='center';ctx.fillText(label,0,-22*u)}
+ ctx.rotate(ang);ctx.scale(u,u);
+ if(!dim){ctx.shadowColor=col;ctx.shadowBlur=18}
+ ctx.fillStyle=dim?'#334155':col;ctx.beginPath();ctx.roundRect(-18,-8,26,16,3);ctx.fill();
+ ctx.fillStyle=dim?'#475569':'#e0f2fe';ctx.beginPath();ctx.roundRect(10,-8,10,16,3);ctx.fill();
+ ctx.shadowBlur=0;ctx.fillStyle='#070b14';ctx.fillRect(14,-5,4,10);
+ ctx.fillStyle='#0b1220';for(const wx of[-10,2,14]){ctx.fillRect(wx-3,-10,6,3);ctx.fillRect(wx-3,7,6,3)}
+ ctx.restore()
+}
+function draw(){
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cw,ch);
+ const c=S.cam,z=c.z;
+ ctx.setTransform(dpr*z,0,0,dpr*z,dpr*(vcx()-c.x*z),dpr*(ch/2-c.y*z));
+ // streets are the gaps between blocks
+ ctx.fillStyle='#0a101d';ctx.fillRect(-60,-60,W+120,H+120);
+ for(const b of blocks){ctx.fillStyle=b.park?'rgba(52,211,153,.10)':`rgba(30,48,78,${b.a*.55})`;ctx.beginPath();ctx.roundRect(b.x+10,b.y+10,80,80,4);ctx.fill()}
+ ctx.lineCap='round';ctx.lineJoin='round';const u=1/z;
+ // old route
+ if(S.oldRoute&&S.oldAlpha>0){ctx.globalAlpha=S.oldAlpha*.8;ctx.strokeStyle=S.crit?'#f87171':'#94a3b8';ctx.lineWidth=3*u;ctx.setLineDash([8*u,7*u]);strokePath(S.oldRoute,1);ctx.setLineDash([]);ctx.globalAlpha=1}
+ // before optimisation the current route is shown
+ if(S.phase>=3&&S.phase<4||S.phase===4&&!S.newRoute){ctx.strokeStyle='#94a3b8';ctx.lineWidth=3*u;ctx.globalAlpha=S.phase===4?S.oldAlpha:.7;ctx.setLineDash([8*u,7*u]);strokePath(S.base,1);ctx.setLineDash([]);ctx.globalAlpha=1}
+ // active route
+ const active=S.newRoute&&(S.phase===4||S.crit)?S.newRoute:(S.phase>=5?S.route:null);
+ if(active){
+  const frac=active===S.newRoute?S.drawFrac:1;
+  ctx.strokeStyle='rgba(56,189,248,.25)';ctx.lineWidth=9*u;strokePath(active,frac);
+  ctx.strokeStyle='#38bdf8';ctx.lineWidth=3.2*u;strokePath(active,frac);
+  if(active===S.route&&S.phase>=5&&S.s>0){const f=S.s/active.len;ctx.strokeStyle='rgba(52,211,153,.9)';ctx.lineWidth=3.2*u;strokePath(active,f)}
+ }
+ // places
+ sq(P.D,'#38bdf8','D');sq(P.F,'#34d399','F');
+ for(const k of['S1','S2','S3'])pin(P[k],'#475569',k.replace('S','Stop '),5);
+ // fleet
+ if(S.phase>=3&&S.phase<=4){for(const v of FLEET){if(v.id===WIN.id)continue;truckSprite(v.pos.x,v.pos.y,0,'#64748b',v.id,true)}}
+ // request
+ if(S.phase>=0){
+  const col=S.status>=5?'#34d399':S.status===4?'#38bdf8':S.status>=1?'#fbbf24':'#fbbf24';
+  const pr=(S.pulse%1.6)/1.6;
+  if(S.status<5){ctx.strokeStyle=col;ctx.globalAlpha=1-pr;ctx.lineWidth=2*u;ctx.beginPath();ctx.arc(P.R.x,P.R.y,(10+pr*34)*u,0,7);ctx.stroke();ctx.globalAlpha=1}
+  if(S.phase>=2&&S.status<5){ctx.strokeStyle=col;ctx.lineWidth=2*u;ctx.beginPath();ctx.arc(P.R.x,P.R.y,15*u,0,7);ctx.stroke()}
+  pin(P.R,col,REQ.id,9);
+  if(S.phase===6){ctx.strokeStyle='#38bdf8';ctx.lineWidth=4*u;ctx.beginPath();ctx.arc(P.R.x,P.R.y,22*u,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,S.collectT*1.4));ctx.stroke()}
+ }
+ // critical request marker
+ if(S.crit||S.critDone){const done=S.critDone&&!S.route.wps.some(w=>w.type==='crit'&&!w.done);const col=done?'#34d399':'#f87171';
+  const pr=(S.pulse%1)/1;if(!done){ctx.strokeStyle=col;ctx.globalAlpha=1-pr;ctx.lineWidth=2*u;ctx.beginPath();ctx.arc(P.C.x,P.C.y,(10+pr*40)*u,0,7);ctx.stroke();ctx.globalAlpha=1}
+  pin(P.C,col,'CRITICAL',9)}
+ // truck
+ let tp,ang;
+ if(S.phase>=5&&S.phase<=8||S.phase===9){const pa=posAt(S.route,S.s);tp=pa;ang=pa.ang}
+ else{tp=P.D;ang=0}
+ let dA=ang-S.ang;while(dA>Math.PI)dA-=2*Math.PI;while(dA<-Math.PI)dA+=2*Math.PI;S.ang+=dA*.18;
+ S.truck={x:tp.x,y:tp.y};
+ if(S.phase>=3)truckSprite(tp.x,tp.y,S.ang,'#38bdf8',WIN.id,false);
+ if(S.phase===3){const rr=1.6*u*14;ctx.strokeStyle='#38bdf8';ctx.lineWidth=2*u;ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(tp.x,tp.y,rr*1.4,0,7);ctx.stroke();ctx.globalAlpha=1}
+}
+
+/* ---------- HUD ---------- */
+let lastKey='';
+function hud(){
+ const p=S.phase,t=S.t;let tag='',title='',sub='',extra='',big='',cls='';
+ const facts=`<dl class="facts"><div><dt>Request ID</dt><dd class="mono">${REQ.id}</dd></div><div><dt>Location</dt><dd>${REQ.loc}</dd></div><div><dt>Waste type</dt><dd>${REQ.type}</dd></div><div><dt>Quantity</dt><dd>${REQ.kg} kg</dd></div><div><dt>Priority</dt><dd style="color:var(--amber)">${REQ.pri}</dd></div></dl>`;
+ const c=S.crit;
+ if(c&&c.stage<4){
+  tag='Dynamic rerouting';
+  if(c.stage===0){title='Critical request detected';big='Critical request detected';cls='red';sub='A new high-risk pickup has just come in near Stop 2.'}
+  else if(c.stage===1){title='Route recalculation required';big='Route recalculation required';cls='warn';sub='The remaining stops are being reordered from the truck\'s current position.'}
+  else if(c.stage===2){title='Optimizing route…';big='Optimizing route…';cls='cy';sub='The old route fades while the new one is drawn.'}
+  else{title='New route active';big='New route active ✓';cls='ok';sub='The truck now collects the critical request first, then continues.'}
+ }
+ else if(p===0){tag='Citizen request';title='Overflowing waste reported in Kurla.';sub='A pickup request appears at Kurla West, LBS Marg.'}
+ else if(p===1){tag='New pickup request';title='The request reaches the control room.';extra=facts}
+ else if(p===2){tag='Admin review';title='The admin reviews the request.';big=t>1.2?'Request validated ✓':'Checking details…';cls=t>1.2?'ok':'cy'}
+ else if(p===3){tag='Truck assignment';title='Finding the right vehicle…';
+  sub='Availability, spare capacity, detour distance, current route and priority.';
+  const rows=EV.map((e,i)=>{const shown=i<S.rev;const win=e.v.id===WIN.id&&S.rev>=EV.length;
+   const res=!shown?'…':e.cost==null?e.verdict:`+${e.cost.toFixed(1)} km`;
+   return `<tr class="${win?'win':e.cost==null&&shown?'no':''}"><td>${e.v.id}</td><td>${shown?e.v.spare+' kg':'…'}</td><td>${res}</td></tr>`}).join('');
+  extra=`<table><tr><th>Truck</th><th>Spare</th><th>Extra distance</th></tr>${rows}</table>`;
+  if(S.rev>=EV.length){big=t>4.8?'Vehicle assigned ✓':`${WIN.id} · Optimizer recommendation`;cls=t>4.8?'ok':'cy'}}
+ else if(p===4){tag='Route optimization';title=t<1.6?`${WIN.id} current route`:'Optimizing route…';
+  sub=t<1.6?'Depot → Stop 1 → Stop 2 → Stop 3 → Facility':'The pickup is inserted where it adds the least distance.';
+  if(t>4)big='Route updated ✓',cls='ok'}
+ else if(p===5){tag='En route';title=`${WIN.id} is heading to the pickup.`;sub='Pause at each stop, then on to the request.'}
+ else if(p===6){tag='Collection';title=t<.8?'Arrived':t<2.2?'Collecting waste…':'Collected';
+  big=t>=2.2?`♻️ ${REQ.kg} kg collected ✓`:'';cls='ok'}
+ else if(p===7){tag='Heading to facility';title='The load goes to the waste facility.';sub='The truck continues along its route.'}
+ else if(p===8){tag='Waste facility';title=t<1.2?'Truck arrived':'Load transferred';big=t>=1.2?'Collection complete ✓':'';cls='ok'}
+ else{tag='City-wide view';title='One request at a time, SafaiSaathi keeps the city moving.';
+  const km=(S.traveled*KM).toFixed(1);const util=Math.round((120-78+REQ.kg)/120*100);
+  extra=`<div class="metrics"><div><b>${REQ.kg} kg</b><span>Waste collected</span></div><div><b>${km} km</b><span>Route distance</span></div><div><b>${util}%</b><span>Vehicle utilization</span></div><div><b>${S.critDone?2:1}</b><span>Requests completed</span></div></div>`}
+ const key=tag+title+sub+big+extra;
+ if(key!==lastKey){lastKey=key;$('card').innerHTML=`<p class="tag">${tag}</p><h1>${title}</h1>${sub?`<p class="sub">${sub}</p>`:''}${big?`<p class="big ${cls}">${big}</p>`:''}${extra}`}
+ // request status chain
+ const lab=S.phase<1?-1:S.phase<2?0:S.phase<3?1:null;
+ let idx=S.phase<1?0:S.phase===1?0:S.phase===2?1:S.status;if(S.phase>=3&&S.status<2)idx=1;
+ const chainKey=idx+'|'+S.status;
+ if($('chain').dataset.k!==chainKey){$('chain').dataset.k=chainKey;
+  const cur=S.phase<2?0:S.phase===2?1:S.status>=5?5:S.status===4?4:S.status===3?3:S.status===2?2:1;
+  $('chain').innerHTML=STEPS.map((s,i)=>`<span class="${i<cur||S.status>=5?'done':i===cur?'on':''}">${s}</span>`).join('');void lab}
+ // banner
+ const b=$('banner');
+ if(c&&c.stage===0){b.textContent='🚨 Critical request detected';b.className='banner show'}
+ else if(c&&c.stage===1){b.textContent='Route recalculation required';b.className='banner show'}
+ else if(c&&c.stage===3){b.textContent='New route active ✓';b.className='banner show good'}
+ else b.className='banner';
+}
+
+/* ---------- loop ---------- */
+let last=performance.now(),raf=0;
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);camStep(dt*1);draw();hud();raf=requestAnimationFrame(frame)}
+$('replay').onclick=()=>{init();lastKey='';$('chain').dataset.k=''};
+$('speed').onclick=()=>{S.speed=S.speed===1?2:S.speed===2?3:1;$('speed').textContent='Speed '+S.speed+'×'};
+addEventListener('pagehide',()=>cancelAnimationFrame(raf));
+init();raf=requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
